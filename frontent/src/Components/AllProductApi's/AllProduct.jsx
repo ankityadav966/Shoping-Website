@@ -18,6 +18,7 @@ const AllProduct = () => {
     const [data, setData] = useState([]);
     const [searchinp, setsearchinp] = useState('')
     const [paginaction, setpaginaction] = useState(1)
+    const [newprice, setprice] = useState()
     const navigate = useNavigate();
 
     const [pagelimit, setpagelimit] = useState(5);
@@ -30,8 +31,8 @@ const AllProduct = () => {
         setpaginaction(event.target.value);
     };
 
-    console.log(pagelimit)
-    console.log(searchinp)
+    console.log("price : ", newprice)
+    // console.log(searchinp)
 
 
     const apidata = async () => {
@@ -70,6 +71,29 @@ const AllProduct = () => {
             });
     };
 
+    // const totalprice = async () => {
+    //     try {
+    //         const myHeaders = new Headers();
+    //         myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6IlZpc2hhbHlhZGF2QGdtYWlsLmNvbSIsImlhdCI6MTczNzUzOTE1NiwiZXhwIjoxNzQxMTM5MTU2fQ.R3azw1OvR5F2XkH5yNqUKM1m7Z0mdKuYwmdmsvf8K54");
+
+    //         const requestOptions = {
+    //             method: "GET",
+    //             headers: myHeaders,
+    //             redirect: "follow"
+    //         };
+
+    //         fetch("http://localhost:3000/api/v1/total", requestOptions)
+    //             .then((response) => response.json())
+    //             .then((result) => {
+    //                 console.log("result.finaldata.DiscountedPrice : : :  : : ; : : :  : :  : : :  ",result.finaldata.DiscountedPrice)
+    //                 setprice(result.finaldata.DiscountedPrice)
+
+    //             });
+    //     } catch (error) {
+    //         console.log(error)
+    //     }
+    // }
+
     useEffect(() => {
         apidata();
     }, []);
@@ -82,6 +106,7 @@ const AllProduct = () => {
         // }
         searchapi()
     }, [searchinp, pagelimit])
+    
 
     return (
         <div>
@@ -142,7 +167,7 @@ const AllProduct = () => {
                         <div
                             key={item._id}
                             className="col-lg-3 col-md-6 col-sm-12 mb-5"
-                            onClick={() => navigate(`/product/${item._id}?category=${item.prooduct_category}`)}
+                            onClick={() => navigate(`/product/${item._id}?category=${item.prooduct_category}&Quantity=${item.quantity}`)}
                         >
                             <div style={{ width: '100%', }}>
                                 <Card sx={{ maxWidth: 345 }}>
@@ -161,6 +186,7 @@ const AllProduct = () => {
                                     <CardContent>
                                         <Typography gutterBottom variant="h5" component="div">
                                             <div>{item.Product_Name}</div>
+                                            {/* atttttttttttttt{item.item.quantity} */}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                             <div>{item.price}</div>

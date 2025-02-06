@@ -1,6 +1,26 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom';
+// const { id } = useParams()
 
 const ShopingNavbar = () => {
+    const navigate = useNavigate()
+    // console.log(id)
+    // const addcards = async () => {
+    //     try {
+    //         const requestOptions = {
+    //             method: "GET",
+    //             redirect: "follow"
+    //         };
+
+    //         await fetch("http://localhost:3000/api/v1/showalladdcard", requestOptions)
+    //             .then((response) => response.json())
+    //             .then((result) => {
+    //                 console.log(result.data)
+    //             });
+    //     } catch (error) {
+    //         console.log(error)
+    //     }
+    // }
   return (
     <div>
         <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -18,7 +38,11 @@ const ShopingNavbar = () => {
                 <a class="nav-link active me-5" aria-current="page" href="#">Profile</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active me-5" href="#">Cart</a>
+                <a class="nav-link active me-5" 
+                // onClick={()=>{
+                //     navigate("/cart")
+                // }}
+                 href="#">Cart</a>
             </li>
             <li class="nav-item me-5">
                 <a class="nav-link active" aria-disabled="true">Become Seller</a>

@@ -7,14 +7,12 @@ import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import ShopingNavbar from '../Navbar/ShopingNavbar';
-import Box from '@mui/material/Box';
-import { styled } from '@mui/material/styles';
-import Slider from '@mui/material/Slider';
+import Box from '@mui/material/Box'; ;
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-
+import { ToastContainer, toast } from 'react-toastify';
 
 function valuetext(value) {
 
@@ -28,33 +26,33 @@ const Useridproduct = () => {
   const [error, setError] = useState(null);
 
   const [alldata, setalldata] = useState()
-  const [pricemax, setpricemax] = useState("");
-  const [pricemin, setpricemin] = useState("");
-  const [color, setcolor] = useState()
-  // const [offermin,setoffermin] = useState("");
-
-
+  const [pricemax, setpricemax] = useState(0);
+  const [pricemin, setpricemin] = useState(0);
+  const [color, setcolor] = useState() 
 
 
   const navigate = useNavigate();
   const { id } = useParams();
-  const location = useLocation()
-  const queryParams = new URLSearchParams(location.search);
-  const category = queryParams.get('category');
-// console.log(id)
+  const location = useLocation();  
+  const queryParams = new URLSearchParams(location.search);  
+  const category = queryParams.get('category');  
+  const Quantity = queryParams.get('Quantity'); 
+  const notify = () => toast.success("Card add SuccessFull !");
+
+  
   const [offermax, setoffermax] = useState("");
 
   // const handleChange2 = (event) => {
   //   setoffermax(event.target.value);
   // };
   console.log(offermax)
-  const [value, setValue] = React.useState([0, 1000000]);
+  // const [value, setValue] = React.useState([0, 1000000]);
 
-  const handleChange = (event, newValue) => {
-    setpricemin(newValue[0])
-    setpricemax(newValue[1])
-    setValue(newValue);
-  };
+  // const handleChange = (event, newValue) => {
+  //   setpricemin(newValue[0])
+  //   setpricemax(newValue[1])
+  //   setValue(newValue);
+  // };
 
 
 
@@ -66,18 +64,21 @@ const Useridproduct = () => {
       try {
         const response = await fetch('http://localhost:3000/api/v1/allproductget');
         const result = await response.json();
-        if (result.data === '001') {
-
-
+        if (result.data === '001') { 
           const foundProduct = result.All_Priduct.find(
             product => product._id === id && product.prooduct_category === category
-          ); 
+          );
+
+          // console.log(foundProduct,"ghf")
           if (foundProduct) {
+            console.log(foundProduct,",,,,,>>>>")
             setData(foundProduct);
 
             const newdata = result.All_Priduct.filter(
-              product => product._id !== id && product.prooduct_category !== category
+              product =>
+                product._id !== id && product.prooduct_category !== category
             )
+            // console.log("New Data  =>>>>>>>>>>>>>> : ", newdata)
             setalldata(newdata)
 
             const filteredProducts = result.All_Priduct.filter(
@@ -99,50 +100,76 @@ const Useridproduct = () => {
       }
     };
     fetchProductDetails();
+
   }, [id]);
   const filterWithprice = async () => {
 
+
     const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append(
-      "Authorization",
-      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImFua2l0eWFkYXZAZ21haWwuY29tIiwiaWF0IjoxNzM2OTU0MDU5LCJleHAiOjE3NDA1NTQwNTl9.U9EngkZwI014uPZh9toOKkuSm6DOXEhNuIcVN87BvrI"
-    );
+myHeaders.append("Content-Type", "application/json");
+myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImFua2l0eWFkYXZAZ21haWwuY29tIiwiaWF0IjoxNzM2OTU0MDU5LCJleHAiOjE3NDA1NTQwNTl9.U9EngkZwI014uPZh9toOKkuSm6DOXEhNuIcVN87BvrI");
 
-    const raw = JSON.stringify({
-      maxPrice: parseInt(pricemax),
-      minPrice: parseInt(pricemin),
-    });
+const raw = JSON.stringify({
+  "maxPrice": parseInt(pricemax),
+  "minPrice":parseInt(pricemin)
+});
 
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
+const requestOptions = {
+  method: "POST",
+  headers: myHeaders,
+  body: raw,
+  redirect: "follow"
+};
 
-    const response = await fetch(
-      "http://localhost:3000/api/v1/minmaxprice",
-      requestOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+fetch("http://localhost:3000/api/v1/minmaxprice", requestOptions)
+  .then((response) => response.json())
+  .then((result) => {
+    if(result.status==="001"){
+      setalldata(result.data)
     }
+  });
 
-    const result = await response.json();
+    // const myHeaders = new Headers();
+    // myHeaders.append("Content-Type", "application/json");
+    // myHeaders.append(
+    //   "Authorization",
+    //   "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImFua2l0eWFkYXZAZ21haWwuY29tIiwiaWF0IjoxNzM2OTU0MDU5LCJleHAiOjE3NDA1NTQwNTl9.U9EngkZwI014uPZh9toOKkuSm6DOXEhNuIcVN87BvrI"
+    // );
 
-    if (result.status === "200") {
-      console.log(result)
-      setalldata(result.data); // Update state with filtered products
-    } else {
-      console.log("No data found");
-    }
+    // const raw = JSON.stringify({
+    //   maxPrice: parseInt(pricemax),
+    //   minPrice: parseInt(pricemin),
+    // });
+
+    // const requestOptions = {
+    //   method: "POST",
+    //   headers: myHeaders,
+    //   body: raw,
+    //   redirect: "follow",
+    // };
+
+    // const response = await fetch(
+    //   "http://localhost:3000/api/v1/minmaxprice",
+    //   requestOptions
+    // );
+
+    // if (!response.ok) {
+    //   throw new Error(`HTTP error! status: ${response.status}`);
+    // }
+
+    // const result = await response.json();
+
+    // if (result.status === "200") {
+    //   console.log(result)
+    //   setalldata(result.data); // Update state with filtered products
+    // } else {
+    //   console.log("No data found");
+    // }
   };
 
   const favoritecolor = async (event) => {
     const selectdata = event.target.value;
-    setcolor(selectdata) 
+    setcolor(selectdata)
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
@@ -167,31 +194,64 @@ const Useridproduct = () => {
   }
 
   const handleChange2 = async (event) => {
-    const selectedOfferMax = event.target.value;
+    const selectedOfferMax = event.target.value; 
     setoffermax(selectedOfferMax);
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
+
     const raw = JSON.stringify({
       "maxdiscount": selectedOfferMax,
       "mindiscount": "0"
     });
+
     const requestOptions = {
       method: "POST",
       headers: myHeaders,
       body: raw,
       redirect: "follow"
     };
-    try {
-      // API call using fetch
-      const response = await fetch("http://localhost:3000/api/v1/discountwithproduct", requestOptions);
-      const result = await response.json();  // Parse the response JSON
 
-      setalldata(result.data);  // Set the data received from the API
-    } catch (error) {
-      console.log("Error fetching data: ", error);  // Handle errors if any
-    }
+   await fetch("http://localhost:3000/api/v1/discountwithproduct", requestOptions)
+      .then((response) => response.json())
+      .then((result) =>{
+        if(result.status=="001"){
+          setalldata(result.data)
+        }
+      });
   };
 
+  const addtocart = async () => {
+    try {
+      const myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImFua2l0eWFkYXZAZ21haWwuY29tIiwiaWF0IjoxNzM2OTUyOTYxLCJleHAiOjE3NDA1NTI5NjF9.Qf6nUGwyYCB-giDWl35_x3MhkRmgA0aU6-lTKo9sPEY");
+
+      const raw = JSON.stringify({
+        "categoryid": id,
+        "quantity": Quantity
+      });
+
+      const requestOptions = {
+        method: "POST",
+        headers: myHeaders,
+        body: raw,
+        redirect: "follow"
+      };
+
+      await fetch("http://localhost:3000/api/v1/addproduct", requestOptions)
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.status === "001") {
+            setalldata(result.data)
+          }
+          else{
+            alert(result.exist)
+          }
+        });
+    } catch (error) {
+      console.log(error)
+    }
+  }
   
 
 
@@ -199,8 +259,10 @@ const Useridproduct = () => {
 
 
 
+
+
   useEffect(() => {
-    filterWithprice()
+    filterWithprice() 
   }, [])
 
   useEffect(() => {
@@ -232,7 +294,7 @@ const Useridproduct = () => {
       {/* Header Start */}
       <ShopingNavbar />
       {/* Header end */}
-
+      {/* <button onClick={notify}>Notify!</button> */}
 
       <div className="container">
         <div className="row">
@@ -240,13 +302,15 @@ const Useridproduct = () => {
             <div>Filter's</div>
             <div>Price
               <div>
-                <Slider
+                {/* <Slider
                   getAriaLabel={() => 'Temperature range'}
                   value={value}
                   onChange={handleChange}
                   valueLabelDisplay="auto"
                   getAriaValueText={valuetext}
-                />
+                /> */}
+                <input type="number" onChange={(e)=>{setpricemax(e.target.value)}} placeholder='enter max price : ' />
+                <input type="number" onChange={(e)=>{setpricemin(e.target.value)}} placeholder='enter min price : ' />
               </div>
             </div>
             <div>Brand</div>
@@ -262,9 +326,9 @@ const Useridproduct = () => {
                     onChange={handleChange2}
                   >
                     <MenuItem value={10}>Ten</MenuItem>
-                    <MenuItem value={20}>Twenty</MenuItem>
-                    <MenuItem value={30}>Thirty</MenuItem>
+                    <MenuItem value={25}>twenty-five</MenuItem>
                     <MenuItem value={50}>Fifty</MenuItem>
+                    <MenuItem value={75}>seventy-five</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -289,7 +353,16 @@ const Useridproduct = () => {
 
                     <CardActions>
                       <Button size="small" >BUY NOW</Button>
-                      <Button size="small" target='_blank' onClick={() => navigate(`/cart/${data._id}`)}>Add to Cart</Button>
+                      <Button size="small" target='_blank'
+                        onClick={() => {
+
+                          notify(),
+                          addtocart(),
+                          setTimeout(() => {
+                            navigate(`/cart/${data._id}?category=${data.prooduct_category}&Quantity=${data.quantity}`)
+                          }, 1000);
+                        }
+                        }>Add to Cart</Button>
                     </CardActions>
                   </Card>
                   <Card>
@@ -323,11 +396,14 @@ const Useridproduct = () => {
                         <span key={i}>⭐</span>
                       ))}
                     </Typography>
-                    <Typography variant="h6" color="text.primary">
-                      Price: ₹{data.price}
+                    <Typography variant="body2" color="text.primary">
+                      <del>Price: ₹{data.price}</del>
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Offer: {data.offer}
+                    </Typography>
+                    <Typography variant="h6" color="text.Primary">
+                      Price: {data.DiscountedPrice}
                     </Typography>
                   </CardContent>
                 </div>
@@ -364,7 +440,7 @@ const Useridproduct = () => {
                         </Button>
                         <Button
                           size="small"
-                          onClick={() => navigate(`/cart/${product._id}`)} // Add to Cart navigation
+                          onClick={() => navigate(`/cart/${product._id}?category=${product.prooduct_category}`)} // Add to Cart navigation
                         >
                           Add to Cart
                         </Button>
@@ -376,9 +452,10 @@ const Useridproduct = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div >
       <div className="container">
         <div className="row">
+
           {
             alldata.length > 0 ?
               alldata?.map((product, index) => {
@@ -424,6 +501,7 @@ const Useridproduct = () => {
           }
         </div>
       </div>
+      <ToastContainer />
     </>
   );
 };

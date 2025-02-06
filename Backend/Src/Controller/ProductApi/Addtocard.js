@@ -8,41 +8,42 @@ const addproduct = async (req, res) => {
     try {
 
         const { categoryid, quantity } = req.body;
-        if (!categoryid) {
-            res.status(404).json({
-                error: "Product not found in the database"
+        const existdata = await categorymodel.findOne({ _id: categoryid });
+
+
+        const userdata = await usermodel.findOne({ Email: req.user.Email });
+        if (!userdata) {
+            return res.status(404).json({ return: "User not found." });
+        }
+
+        const findbyprice = await categorymodel.findOne({ _id: categoryid });
+        if (!findbyprice) {
+            return res.status(404).json({ return: "Category not found." });
+        }
+
+        const totalamount = findbyprice.price || findbyprice.price * quantity;
+
+
+        const existproduct = await addtocard.findOne({ categoryid, UserId: userdata._id });
+        if (existproduct) {
+            return res.status(400).json({
+                exist: "Product already exists in cart."
             });
         }
-        const existdata = await categorymodel.findOne({ _id: categoryid })
-        // if (existdata) {
-        //     throw new Error("This product already exists.");
-        //   }        
-        // if (product) { 
-        //     res.status(409).json({
-        //         error: "Product already exists"
-        //     });
-        // }
-        const userdata = await usermodel.find({ Email: req.user.Email })
-        // console.log("user data : ", data[0]._id)
-        const findtodata = userdata[0]._id;
-        console.log(findtodata)
 
-
-        const findbyprice = await categorymodel.find()
-
-        const totalamount = findbyprice[0].price * quantity
-        const useremail = await categorymodel.find()
         const data = await addtocard.create({
-            UserId: findtodata,
+            UserId: userdata._id,
             categoryid: categoryid,
-            quantity: quantity
-        })
+            quantity: quantity,
+            price: totalamount
+        });
 
-        res.status(200).json({
+        return res.status(200).json({
             status: "001",
             data: data,
             TotalAmount: totalamount
-        })
+        });
+
     } catch (error) {
         return res.status(500).json({
             status: "500",
@@ -52,39 +53,140 @@ const addproduct = async (req, res) => {
     }
 }
 
-const quantityUpdate = async (req, res) => {
+// const addproduct = async (req, res) => {
+//     try {
+//         const { categoryid } = req.body;
+//         const userdata = await usermodel.findOne({ Email: req.user.Email });
+//         const productdata = await categorymodel.findOne({ _id: categoryid });
+
+//         if (!userdata) {
+//             return res.status(400).json({ message: "User not found" });
+//         }
+
+//         if (!productdata) {
+//             return res.status(400).json({ message: "Product not found" });
+//         }
+
+//         const { price, quantity, offer } = productdata;
+//         const totalAmount = (price * quantity) * (1 - (offer / 100)); 
+
+//         const data = await addtocard.create({
+//             UserId: userdata._id,
+//             categoryid: categoryid,
+//             quantity: quantity,
+//             productprice: totalAmount
+//         });
+
+//         res.status(200).json({
+//             status: "001",
+//             data: data,
+//             TotalAmount: totalAmount
+//         });
+
+//         // console.log(data)
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const showalladdcard = async (req, res) => {
     try {
-        const userdetails = await usermodel.find({ Email: req.user.Email });
+        const data = await addtocard.find().lean();
+        const newdata = data.map(item => { return item.categoryid }).flat();
 
-        const { productId } = req.body;
-        const findbyprice = await categorymodel.find({ _id: productId });
+        //  item.price - (item.price / 100 * parseInt(item.offer)
+        // const newdatafordis = data.map(item => {
+        //     const filterprice = item.price - (item.price / 100 * (item.offer));
+        //     return { ...item, DiscountedPriceproduct: filterprice };
+        // });
+        const validIds = newdata.filter(id => mongoose.Types.ObjectId.isValid(id));
 
-        if (findbyprice.length > 0) {
-            const currentQuantity = findbyprice[0]?.quantity || 0; // Fetch the current quantity, default to 0 if not found
 
-            const updatedProduct = await categorymodel.findOneAndUpdate(
-                { _id: productId },
-                { $set: { quantity: currentQuantity + 1 } }
-            );
-
-            res.status(200).json({
-                data: updatedProduct
+        if (validIds.length > 0) {
+            const lastdata = await categorymodel.find({ _id: { $in: validIds } });
+            const newdatafordis = lastdata.map(item => {
+                const quantity = item.quantity;
+                const filterprice = item.price - (item.price / 100 * (item.offer))
+                const a = {
+                    price: filterprice,
+                    offer: filterprice * quantity
+                };
+                return a;
+            }
+            )
+            return res.status(200).json({
+                status: "001",
+                data: lastdata,
+                newdatafordis: newdatafordis
             });
         } else {
             console.log("Product not found.");
-            res.status(404).json({
+            return res.status(404).json({
                 message: "Product not found"
             });
         }
 
     } catch (error) {
+        console.log(error)
+    }
+}
+
+const quantityUpdate = async (req, res) => {
+    try {
+        const { productId, operation } = req.body; // operation: "increase" or "decrease"
+
+        const product = await categorymodel.findOne({ _id: productId });
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        let newQuantity = product.quantity;
+
+        if (operation === "increase") {
+            newQuantity += 1;
+        } else if (operation === "decrease" && newQuantity > 0) {
+            newQuantity -= 1;
+        }
+
+        const updatedProduct = await categorymodel.findOneAndUpdate(
+            { _id: productId },
+            { $set: { quantity: newQuantity } },
+            { new: true } // Returns updated document
+        );
+
+        res.status(200).json({ data: updatedProduct });
+
+    } catch (error) {
         return res.status(500).json({
             status: "500",
-            message: "An error occurred during registration",
+            message: "An error occurred",
             error: error.message
         });
     }
 };
+
 const likesquintaty = async (req, res) => {
     try {
         const { productId } = req.body;
@@ -95,18 +197,17 @@ const likesquintaty = async (req, res) => {
                 { _id: productId },
                 { $set: { likes: likes + 1 } }
             )
-            res.status(200).json({
+            return res.status(200).json({
                 status: "001",
                 data: updatelikes
             })
         }
         else {
             console.log("Product not found.");
-            res.status(404).json({
+            return res.status(404).json({
                 message: "Product not found"
             });
         }
-        console.log(data)
     } catch (error) {
         return res.status(500).json({
             status: "500",
@@ -150,22 +251,36 @@ const rating = async (req, res) => {
 
 const total = async (req, res) => {
     try {
-        // console.log(req.user.Email)
-        const data = await usermodel.find({ Email: req.user.Email })
-        const findtodata = data[0]._id;
-        const finaldata = await categorymodel.find({ UserId: findtodata }).lean()
-        const data2 = await finaldata.map(item => {
-            console.log(item, "i");
-            const newprice = item.price - (item.price / 100 * parseInt(item.offer))
-            item.DiscountedPrice = newprice
-            console.log("all descount : ", item)
+        // const finaldata = await categorymodel.find().lean()
+        // const data2 = await finaldata.map(item => {
+        //     const newprice = item.price - (item.price / 100 * parseInt(item.offer))
+        //     item.DiscountedPrice = newprice 
+        // });
+
+        const data = await addtocard.find();
+        let sum = 0;
+
+        const price = async () => {
+            for (let item of data) {
+                const finddata = item.categoryid;
+                console.log("finddata : : ", finddata);
+                const newdata = await categorymodel.find({ _id: finddata });
+
+                newdata.forEach(item => {
+                    const final = item.price - (item.price / 100 * (item.offer));
+                    const a = final * item.quantity;
+                    sum += a;
+                });
+            }
+            console.log("sum : ", sum);
+        };
+
+        await price();
+        res.status(200).json({
+            status: "001",
+            TotalPrice: sum,
         });
 
-        res.status(200).json({
-            User: data,
-            finaldata: finaldata,
-            // loopingfordat: loopingfordat
-        })
     } catch (error) {
         return res.status(500).json({
             status: "500",
@@ -173,7 +288,8 @@ const total = async (req, res) => {
             error: error.message
         });
     }
-}
+};
+
 // const buydata = async (req, res) => {
 //     try {
 //         const { UserId } = req.body;
@@ -223,44 +339,41 @@ const total = async (req, res) => {
 // }
 const buydata = async (req, res) => {
     try {
+        const { productId } = req.body;
         const userdetails = await usermodel.find({ Email: req.user.Email })
-        const userbyallproduct = await categorymodel.find({ UserId: userdetails[0]._id }).lean();
+        // const userbyallproduct = await categorymodel.find({ UserId: userdetails[0]._id }).lean();
+        const userbyallproduct = await categorymodel.find({ _id: productId }).lean();
+        const toalammount = userbyallproduct.map(item => {
+            const filterprice = item.price - (item.price / 100 * (item.offer))
+            const a = filterprice * item.quantity
+            return a;
+        })
+        // console.log("userbyallproduct",)
 
-        let totalDiscountedPrice = 0;
-        const data2 = await userbyallproduct.map(item => {
-            const newprice = item.price - (item.price / 100 * parseInt(item.offer))
-            item.DiscountedPrice = newprice
-            console.log("all descount : ", item)
+        // let totalDiscountedPrice = 0;
+        // const data2 = await userbyallproduct.map(item => {
+        //     const newprice = item.price - (item.price / 100 * parseInt(item.offer))
+        //     item.DiscountedPrice = newprice 
+        //     totalDiscountedPrice += newprice;
 
-            // const jointto_offer = price.reduce((pre,cur)=>{
-            //     return pre+cur
-            // })
-            // console.log(jointto_offer)
-            totalDiscountedPrice += newprice;
-
-            item.totalDiscountedPrice = totalDiscountedPrice;
-        });
+        //     item.totalDiscountedPrice = totalDiscountedPrice;
+        // });
         const userrdata =
             userdetails[0].Address[0].Address + ","
             +
             userdetails[0].Address[0].village + ","
             +
             userdetails[0].Address[0].PinCodeNumber;
-        console.log(userrdata)
 
-        res.status(200).json({
+        return res.status(200).json({
             userdetails: userdetails,
             userDetails: userrdata,
-            totalDiscountedPrice: totalDiscountedPrice
-        })
-
-
-
-
+            totalDiscountedPrice: toalammount
+        }) 
 
     } catch (error) {
         console.error("Error:", error);
-        res.status(500).send({ error: "Internal server error" });
+        return res.status(500).send({ error: "Internal server error" });
     }
 };
 
@@ -271,9 +384,8 @@ const product_pricefilter = async (req, res) => {
 
         const allproduct = await categorymodel.find().sort([["price", "asc" ? "desc" : ""]]);
         const allproductprice = allproduct.map(item => item.price);
-        console.log("Sorted Prices:", allproductprice);
 
-        res.status(200).json({ sortedPrices: allproductprice });
+        return res.status(200).json({ sortedPrices: allproductprice });
     } catch (error) {
         return res.status(500).json({
             status: "500",
@@ -295,10 +407,9 @@ const min_max_price = async (req, res) => {
             price: { $gte: minPrice, $lte: maxPrice }
         });
 
-        console.log("All Products:", allProducts);
 
         return res.status(200).json({
-            status: "200",
+            status: "001",
             message: "Products fetched successfully",
             data: allProducts
         });
@@ -358,7 +469,7 @@ const favoriteColor = async (req, res) => {
         // const find_data = await categorymodel.find({
         //     colordata: color
         // })
-        res.status(200).json({
+        return res.status(200).json({
             status: '9090',
             data: data
         })
@@ -388,7 +499,7 @@ const searchapi = async (req, res) => {
 
     } catch (error) {
         console.log(error.message)
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
 
     }
 
@@ -397,13 +508,37 @@ const profile = async (req, res) => {
     try {
 
         const data = await usermodel.find({});
-        res.status(200).json({
+        return res.status(200).json({
             status: "00001",
             data: data
         })
     } catch (error) {
         console.log(error.message)
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+}
+const productremove = async (req, res) => {
+    try {
+        const { productid } = req.body;
+        const finddata = await categorymodel.findOne({ _id: productid })
+        if (finddata) {
+            const data = await categorymodel.findOneAndDelete({ _id: productid })
+            return res.status(200).json({
+                status: "001",
+                data: data
+            })
+        }
+        else {
+            return res.status(404).json({
+                status: "404",
+                message: "Product not found"
+            });
+        }
+
+
+
+    } catch (error) {
+        console.log(error)
     }
 }
 
@@ -423,5 +558,7 @@ module.exports =
     searchapi,
     profile,
     likesquintaty,
-    rating
+    rating,
+    showalladdcard,
+    productremove
 }

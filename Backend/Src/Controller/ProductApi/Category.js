@@ -71,10 +71,18 @@ const catigorydata = async (req, res) => {
 };
 const allproductget = async (req, res) => {
     try {
-        const data = await categorymodel.find();
+        // const data = await categorymodel.find();
+        const finaldata = await categorymodel.find().lean()
+        const data2 = await finaldata.map(item => { 
+            const newprice = item.price - (item.price / 100 * parseInt(item.offer))
+            item.DiscountedPrice = newprice 
+        });
+        finaldata.price = finaldata.offer * finaldata.quantity
+
+
         res.status(200).json({
             data: '001',
-            All_Priduct: data
+            All_Priduct: finaldata
         })
     } catch (error) {
         console.log(error)

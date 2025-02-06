@@ -5,12 +5,15 @@ const addtocatrd = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'register'
     },
-    categoryid: {
+    categoryid:[{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'categorys'
-    },
+    }],
     quantity:{
         type:Number
+    },
+    productprice:{
+        type:String
     }
 },{
     timestamps:true

@@ -50,9 +50,12 @@ const Userlogin = () => {
             };
 
             fetch("http://localhost:3000/api/v1/registerapi", requestOptions)
-                .then((response) => response.text())
-                .then((result) => console.log(result))
-                .catch((error) => console.error(error));
+                .then((response) => response.json())
+                .then((result) => {
+                    if(result.status==="001"){
+                        console.log(result.data)
+                    }
+                });
         } catch (error) {
             console.log(error)
         }
